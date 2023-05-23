@@ -141,6 +141,20 @@ public abstract class ActionBase {
 	}
 
 	/**
+     * リクエストから表示を要求されているページ数を取得し、返却する
+     * @return 要求されているページ数(要求がない場合は1)
+     */
+	protected int getPage() {
+		int page;
+		page = toNumber(request.getParameter(AttributeConst.PAGE.getValue()));
+		if (page == Integer.MIN_VALUE) {
+			page = 1;
+		}
+
+		return page;
+	}
+
+	/**
      * 文字列を数値に変換する
      * @param strNumber 変換前文字列
      * @return 変換後数値
@@ -150,7 +164,7 @@ public abstract class ActionBase {
 		int number = 0;
 
 		try {
-			number = Integer.parseInt(strNumber)
+			number = Integer.parseInt(strNumber);
 		} catch (Exception e) {
 			number = Integer.MIN_VALUE;
 		}
