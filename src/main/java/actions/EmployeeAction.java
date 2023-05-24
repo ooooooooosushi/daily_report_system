@@ -172,6 +172,7 @@ public class EmployeeAction extends ActionBase {
     	}
 
     	putRequestScope(AttributeConst.TOKEN, getTokenId()); // CSRF対策用トークン
+    	System.out.println("getTokenId(edit) is " + getTokenId());
     	putRequestScope(AttributeConst.EMPLOYEE, ev); // 取得した従業員情報
 
     	// 編集画面を表示する
@@ -187,6 +188,7 @@ public class EmployeeAction extends ActionBase {
 
     	// CSRF対策tokenのチェック
     	if(checkToken()) {
+
 
     		// パラメータの値をもとに従業員情報のインスタンスの作成
     		EmployeeView ev = new EmployeeView(
@@ -226,6 +228,27 @@ public class EmployeeAction extends ActionBase {
     			redirect(ForwardConst.ACT_EMP, ForwardConst.CMD_INDEX);
     		}
 
+    	}
+    }
+
+    /**
+     * 論理削除を行う
+     * @throws ServletException
+     * @throws IOException
+     */
+    public void destroy() throws ServletException, IOException {
+
+    	// CSRF対策tokenチェック
+    	if (checkToken()) {
+
+    		// idを条件に従業員データを論理削除
+    		service.destroy(toNumber(getRequestParam(AttributeConst.EMP_ID)));
+
+    		// セッション完了時にフラッシュメッセージを設定
+    		putSessionScope(AttributeConst.FLUSH, MessageConst.I_DELETED.getMessage());
+
+    		// 一覧画面にリダイレクト
+    		redirect(ForwardConst.ACT_EMP, ForwardConst.CMD_INDEX);
     	}
     }
 }
