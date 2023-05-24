@@ -12,242 +12,247 @@ import models.Employee;
 import models.validators.EmployeeValidator;
 import utils.EncryptUtil;
 
-// 従業員テーブルの捜査にかかわる処理を行うクラス
+/**
+ * 従業員テーブルの操作に関わる処理を行うクラス
+ */
 public class EmployeeService extends ServiceBase {
 
-	/**
+    /**
      * 指定されたページ数の一覧画面に表示するデータを取得し、EmployeeViewのリストで返却する
      * @param page ページ数
      * @return 表示するデータのリスト
      */
-	public List<EmployeeView> getPerPage(int page) {
-		List<Employee> employees = em.createNamedQuery(JpaConst.Q_EMP_GET_ALL, Employee.class)
-					.setFirstResult(JpaConst.ROW_PER_PAGE * (page - 1))
-					.setMaxResults(JpaConst.ROW_PER_PAGE)
-					.getResultList();
+    public List<EmployeeView> getPerPage(int page) {
+        List<Employee> employees = em.createNamedQuery(JpaConst.Q_EMP_GET_ALL, Employee.class)
+                .setFirstResult(JpaConst.ROW_PER_PAGE * (page - 1))
+                .setMaxResults(JpaConst.ROW_PER_PAGE)
+                .getResultList();
 
-		return EmployeeConverter.toViewList(employees);
+        return EmployeeConverter.toViewList(employees);
+    }
 
-	}
-
-	/**
+    /**
      * 従業員テーブルのデータの件数を取得し、返却する
      * @return 従業員テーブルのデータの件数
      */
-	public long countAll() {
+    public long countAll() {
+        long empCount = (long) em.createNamedQuery(JpaConst.Q_EMP_COUNT, Long.class)
+                .getSingleResult();
 
-		long empCount = (long) em.createNamedQuery(JpaConst.Q_EMP_COUNT, Long.class).getSingleResult();
-		return empCount;
-	}
+        return empCount;
+    }
 
-	/**
+    /**
      * 社員番号、パスワードを条件に取得したデータをEmployeeViewのインスタンスで返却する
      * @param code 社員番号
      * @param plainPass パスワード文字列
      * @param pepper pepper文字列
      * @return 取得データのインスタンス 取得できない場合null
      */
-	public EmployeeView findOne(String code, String plainPass, String pepper) {
+    public EmployeeView findOne(String code, String plainPass, String pepper) {
+        Employee e = null;
+        try {
+            //パスワードのハッシュ化
+            String pass = EncryptUtil.getPasswordEncrypt(plainPass, pepper);
 
-		Employee e = null;
+            //社員番号とハッシュ化済パスワードを条件に未削除の従業員を1件取得する
+            e = em.createNamedQuery(JpaConst.Q_EMP_GET_BY_CODE_AND_PASS, Employee.class)
+                    .setParameter(JpaConst.JPQL_PARM_CODE, code)
+                    .setParameter(JpaConst.JPQL_PARM_PASSWORD, pass)
+                    .getSingleResult();
 
-		try {
-			// パスワードのハッシュ化
-			String pass = EncryptUtil.getPasswordEncrypt(plainPass, pepper);
+        } catch (NoResultException ex) {
+        }
 
-			// 社員番号とハッシュ化済パスワードを条件に未削除の従業員を１件取得する
-			e = em.createNamedQuery(JpaConst.Q_EMP_GET_BY_CODE_AND_PASS, Employee.class)
-					.setParameter(JpaConst.JPQL_PARM_CODE, code)
-					.setParameter(JpaConst.JPQL_PARM_PASSWORD, pass)
-					.getSingleResult();
-		} catch (NoResultException ex) {
+        return EmployeeConverter.toView(e);
 
-		}
+    }
 
-		return EmployeeConverter.toView(e);
-	}
-
-	/**
+    /**
      * idを条件に取得したデータをEmployeeViewのインスタンスで返却する
      * @param id
      * @return 取得データのインスタンス
-     */public EmployeeView findOne(int id) {
+     */
+    public EmployeeView findOne(int id) {
+        Employee e = findOneInternal(id);
+        return EmployeeConverter.toView(e);
+    }
 
-    	 Employee e = findOneInternal(id);
-    	 return EmployeeConverter.toView(e);
+    /**
+     * 社員番号を条件に該当するデータの件数を取得し、返却する
+     * @param code 社員番号
+     * @return 該当するデータの件数
+     */
+    public long countByCode(String code) {
 
-     }
+        //指定した社員番号を保持する従業員の件数を取得する
+        long employees_count = (long) em.createNamedQuery(JpaConst.Q_EMP_COUNT_REGISTERED_BY_CODE, Long.class)
+                .setParameter(JpaConst.JPQL_PARM_CODE, code)
+                .getSingleResult();
+        return employees_count;
+    }
 
-     /**
-      * 社員番号を条件に該当するデータの件数を取得し、返却する
-      * @param code 社員番号
-      * @return 該当するデータの件数
-      */
-     public long countByCode(String code) {
+    /**
+     * 画面から入力された従業員の登録内容を元にデータを1件作成し、従業員テーブルに登録する
+     * @param ev 画面から入力された従業員の登録内容
+     * @param pepper pepper文字列
+     * @return バリデーションや登録処理中に発生したエラーのリスト
+     */
+    public List<String> create(EmployeeView ev, String pepper) {
 
-    	 // 指定した社員番号を保持する従業員の件数を取得する
-    	 long employees_count = (long) em.createNamedQuery(JpaConst.Q_EMP_COUNT_REGISTERED_BY_CODE, Long.class)
-    			 .setParameter(JpaConst.JPQL_PARM_CODE, code)
-    			 .getSingleResult();
+        //パスワードをハッシュ化して設定
+        String pass = EncryptUtil.getPasswordEncrypt(ev.getPassword(), pepper);
+        ev.setPassword(pass);
 
-    	 return employees_count;
-     }
+        //登録日時、更新日時は現在時刻を設定する
+        LocalDateTime now = LocalDateTime.now();
+        ev.setCreatedAt(now);
+        ev.setUpdatedAt(now);
 
-     /**
-      * 画面から入力された従業員の登録内容を元にデータを1件作成し、従業員テーブルに登録する
-      * @param ev 画面から入力された従業員の登録内容
-      * @param pepper pepper文字列
-      * @return バリデーションや登録処理中に発生したエラーのリスト
-      */
-     public List<String> create(EmployeeView ev, String pepper) {
+        //登録内容のバリデーションを行う
+        List<String> errors = EmployeeValidator.validate(this, ev, true, true);
 
-    	 // パスワードをハッシュ化して設定
-    	 String pass = EncryptUtil.getPasswordEncrypt(ev.getPassword(), pepper);
-    	 ev.setPassword(pass);
+        //バリデーションエラーがなければデータを登録する
+        if (errors.size() == 0) {
+            create(ev);
+        }
 
-    	 // 登録日時、更新日時は現在時刻を設定する
-    	 LocalDateTime now = LocalDateTime.now();
-    	 ev.setCreatedAt(now);
-    	 ev.setUpdatedAt(now);
+        //エラーを返却（エラーがなければ0件の空リスト）
+        return errors;
+    }
 
-    	 // 登録内容のバリデーションを行う
-    	 List<String> errors = EmployeeValidator.validate(this, ev, true, true);
+    /**
+     * 画面から入力された従業員の更新内容を元にデータを1件作成し、従業員テーブルを更新する
+     * @param ev 画面から入力された従業員の登録内容
+     * @param pepper pepper文字列
+     * @return バリデーションや更新処理中に発生したエラーのリスト
+     */
+    public List<String> update(EmployeeView ev, String pepper) {
 
-    	 // バリデーションエラーがなければデータを登録する
-    	 if (errors.size() == 0) {
-    		 create(ev);
-    	 }
+        //idを条件に登録済みの従業員情報を取得する
+        EmployeeView savedEmp = findOne(ev.getId());
 
-    	 // エラーを返却（エラーがなければ0件の空リスト）
-    	 return errors;
-     }
+        boolean validateCode = false;
+        if (!savedEmp.getCode().equals(ev.getCode())) {
+            //社員番号を更新する場合
 
-     /**
-      * 従業員データを1件登録する
-      * @param ev 従業員データ
-      * @return 登録結果(成功:true 失敗:false)
-      */
-     private void create(EmployeeView ev) {
+            //社員番号についてのバリデーションを行う
+            validateCode = true;
+            //変更後の社員番号を設定する
+            savedEmp.setCode(ev.getCode());
+        }
 
-    	 em.getTransaction().begin();
-    	 em.persist(EmployeeConverter.toModel(ev));
-    	 em.getTransaction().commit();
-     }
+        boolean validatePass = false;
+        if (ev.getPassword() != null && !ev.getPassword().equals("")) {
+            //パスワードに入力がある場合
 
-     /**
-      * 画面から入力された従業員の更新内容を元にデータを1件作成し、従業員テーブルを更新する
-      * @param ev 画面から入力された従業員の登録内容
-      * @param pepper pepper文字列
-      * @return バリデーションや更新処理中に発生したエラーのリスト
-      */
-     public List<String> update(EmployeeView ev, String pepper) {
+            //パスワードについてのバリデーションを行う
+            validatePass = true;
 
+            //変更後のパスワードをハッシュ化し設定する
+            savedEmp.setPassword(
+                    EncryptUtil.getPasswordEncrypt(ev.getPassword(), pepper));
+        }
 
-    	 // idを条件に登録済みの従業員情報を取得する
-    	 EmployeeView savedEmp = findOne(ev.getId());
+        savedEmp.setName(ev.getName()); //変更後の氏名を設定する
+        savedEmp.setAdminFlag(ev.getAdminFlag()); //変更後の管理者フラグを設定する
 
-    	 boolean validateCode = false;
-    	 if (!savedEmp.getCode().equals(ev.getCode())) {
-    		 // 社員番号を更新する場合
+        //更新日時に現在時刻を設定する
+        LocalDateTime today = LocalDateTime.now();
+        savedEmp.setUpdatedAt(today);
 
-    		 // 社員番号についてのバリデーションを行う
-    		 validateCode = true;
-    		 // 変更後の社員番号を設定する。
-    		 savedEmp.setCode(ev.getCode());
-    	 }
+        //更新内容についてバリデーションを行う
+        List<String> errors = EmployeeValidator.validate(this, savedEmp, validateCode, validatePass);
 
-    	 boolean validatePass = false;
-    	 if (ev.getPassword() != null && !ev.getPassword().equals("")) {
-    		 // パスワードに入力がある場合
+        //バリデーションエラーがなければデータを更新する
+        if (errors.size() == 0) {
+            update(savedEmp);
+        }
 
-    		 // パスワードについてのバリデーションを行う
-    		 validatePass = true;
+        //エラーを返却（エラーがなければ0件の空リスト）
+        return errors;
+    }
 
-    		 // 変更後のパスワードをハッシュ化し設定する。
-    		 savedEmp.setPassword(EncryptUtil.getPasswordEncrypt(ev.getPassword(), pepper));
+    /**
+     * idを条件に従業員データを論理削除する
+     * @param id
+     */
+    public void destroy(Integer id) {
 
-    	 }
+        //idを条件に登録済みの従業員情報を取得する
+        EmployeeView savedEmp = findOne(id);
 
-    	 savedEmp.setName(ev.getName()); // 変更後の氏名の設定
-    	 savedEmp.setAdminFlag(ev.getAdminFlag()); // 変更後の管理者フラグを設定
+        //更新日時に現在時刻を設定する
+        LocalDateTime today = LocalDateTime.now();
+        savedEmp.setUpdatedAt(today);
 
-    	 // 更新日時に現在時刻を設定する
-    	 LocalDateTime today = LocalDateTime.now();
-    	 savedEmp.setUpdatedAt(today);
+        //論理削除フラグをたてる
+        savedEmp.setDeleteFlag(JpaConst.EMP_DEL_TRUE);
 
-    	 // 更新内容についてバリデーションを行う
-    	 List<String> errors = EmployeeValidator.validate(this, savedEmp, validateCode, validatePass);
+        //更新処理を行う
+        update(savedEmp);
 
-    	 // バリデーションエラーがなければデータを更新する
-    	 if (errors.size() == 0) {
-    		 update(savedEmp);
-    	 }
+    }
 
-    	 // エラーを返却（エラーがなければ0件のからのリスト）
-    	 return errors;
-     }
+    /**
+     * 社員番号とパスワードを条件に検索し、データが取得できるかどうかで認証結果を返却する
+     * @param code 社員番号
+     * @param plainPass パスワード
+     * @param pepper pepper文字列
+     * @return 認証結果を返却す(成功:true 失敗:false)
+     */
+    public Boolean validateLogin(String code, String plainPass, String pepper) {
 
-     private void update(EmployeeView ev) {
-    	 em.getTransaction().begin();
-    	 Employee e = findOneInternal(ev.getId());
-    	 EmployeeConverter.copyViewToModel(e, ev);
-    	 em.getTransaction().commit();
-     }
+        boolean isValidEmployee = false;
+        if (code != null && !code.equals("") && plainPass != null && !plainPass.equals("")) {
+            EmployeeView ev = findOne(code, plainPass, pepper);
 
-     /**
-      * idを条件に従業員データを論理削除する
-      * @param id
-      */
-     public void destroy(Integer id) {
+            if (ev != null && ev.getId() != null) {
 
-    	 // idを条件に登録済みの従業員情報を取得する
-    	 EmployeeView savedEmp = findOne(id);
+                //データが取得できた場合、認証成功
+                isValidEmployee = true;
+            }
+        }
 
-    	 // 更新日時に現在時刻を設定する
-    	 LocalDateTime today = LocalDateTime.now();
-    	 savedEmp.setUpdatedAt(today);
+        //認証結果を返却する
+        return isValidEmployee;
+    }
 
-    	 // 論理削除フラグを立てる
-    	 savedEmp.setDeleteFlag(JpaConst.EMP_DEL_TRUE);
+    /**
+     * idを条件にデータを1件取得し、Employeeのインスタンスで返却する
+     * @param id
+     * @return 取得データのインスタンス
+     */
+    private Employee findOneInternal(int id) {
+        Employee e = em.find(Employee.class, id);
 
-    	 // 更新処理を行う
-    	 update(savedEmp);
-     }
+        return e;
+    }
 
-     /**
-      * 社員番号とパスワードを条件に検索し、データが取得できるかどうかで認証結果を返却する
-      * @param code 社員番号
-      * @param plainPass パスワード
-      * @param pepper pepper文字列
-      * @return 認証結果を返却す(成功:true 失敗:false)
-      */
-     public Boolean validateLogin(String code, String plainPass, String pepper) {
+    /**
+     * 従業員データを1件登録する
+     * @param ev 従業員データ
+     * @return 登録結果(成功:true 失敗:false)
+     */
+    private void create(EmployeeView ev) {
 
-    	 boolean isValidEmployee = false;
-    	 if (code != null && !code.equals("") && plainPass != null && !plainPass.equals("")) {
-    		 EmployeeView ev = findOne(code, plainPass, pepper);
+        em.getTransaction().begin();
+        em.persist(EmployeeConverter.toModel(ev));
+        em.getTransaction().commit();
 
-    		 if (ev != null && ev.getId() != null) {
+    }
 
-    			 //データが取得できた場合、認証成功
-    			 isValidEmployee = true;
-    		 }
-    	 }
+    /**
+     * 従業員データを更新する
+     * @param ev 画面から入力された従業員の登録内容
+     */
+    private void update(EmployeeView ev) {
 
-    	 // 認証結果を返却する
-    	 return isValidEmployee;
-     }
+        em.getTransaction().begin();
+        Employee e = findOneInternal(ev.getId());
+        EmployeeConverter.copyViewToModel(e, ev);
+        em.getTransaction().commit();
 
-     /**
-      * idを条件にデータを1件取得し、Employeeのインスタンスで返却する
-      * @param id
-      * @return 取得データのインスタンス
-      */
-     private Employee findOneInternal(int id) {
-    	 Employee e = em.find(Employee.class, id);
+    }
 
-    	 return e;
-
-     }
 }
-

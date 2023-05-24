@@ -59,6 +59,7 @@ public abstract class ActionBase {
 
 			// パラメータからcommandを取得
 			String command = request.getParameter(ForwardConst.CMD.getValue());
+			System.out.println("command is " + command);
 
 			// commandに該当するメソッドを実行する
 			// (例: action=Employee command=show の場合 EmployeeActionクラスのshow()メソッドを実行する)
@@ -85,6 +86,7 @@ public abstract class ActionBase {
 
 		// jspファイルの相対パスを作成
 		String forward = String.format("/WEB-INF/views/%s.jsp", target.getValue());
+		System.out.println(forward);
 		RequestDispatcher dispatcher = request.getRequestDispatcher(forward);
 
 		// jspファイルの呼び出し
