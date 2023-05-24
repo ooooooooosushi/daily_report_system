@@ -11,7 +11,7 @@
 
 		<c:if test="${loginError}">
 			<div id="flush_error">
-				<h2>社員番号かパスワードが間違っています。</h2>
+				社員番号かパスワードが間違っています。
 			</div>
 		</c:if>
 
