@@ -21,29 +21,24 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
 /**
  * 日報データのDTOモデル
  *
  */
-@Table(name=JpaConst.TABLE_REP)
+@Table(name = JpaConst.TABLE_REP)
 @NamedQueries({
-	@NamedQuery(
-		name = JpaConst.Q_REP_GET_ALL,
-		query = JpaConst.Q_EMP_GET_ALL_DEF
-	),
-	@NamedQuery(
-		name = JpaConst.Q_REP_COUNT,
-		query = JpaConst.Q_REP_COUNT_DEF
-	),
-	@NamedQuery(
-		name = JpaConst.Q_REP_GET_ALL_MINE,
-		query = JpaConst.Q_REP_GET_ALL_MINE_DEF
-	),
-	@NamedQuery(
-		name = JpaConst.Q_REP_COUNT_ALL_MINE,
-		query = JpaConst.Q_REP_COUNT_ALL_MINE_DEF
-	)
+    @NamedQuery(
+            name = JpaConst.Q_REP_GET_ALL,
+            query = JpaConst.Q_REP_GET_ALL_DEF),
+    @NamedQuery(
+            name = JpaConst.Q_REP_COUNT,
+            query = JpaConst.Q_REP_COUNT_DEF),
+    @NamedQuery(
+            name = JpaConst.Q_REP_GET_ALL_MINE,
+            query = JpaConst.Q_REP_GET_ALL_MINE_DEF),
+    @NamedQuery(
+            name = JpaConst.Q_REP_COUNT_ALL_MINE,
+            query = JpaConst.Q_REP_COUNT_ALL_MINE_DEF)
 })
 
 @Getter //全てのクラスフィールドについてgetterを自動生成する(Lombok)
@@ -51,10 +46,7 @@ import lombok.Setter;
 @NoArgsConstructor //引数なしコンストラクタを自動生成する(Lombok)
 @AllArgsConstructor //全てのクラスフィールドを引数にもつ引数ありコンストラクタを自動生成する(Lombok)
 @Entity
-
-
 public class Report {
-
 
     /**
      * id
@@ -103,4 +95,3 @@ public class Report {
     private LocalDateTime updatedAt;
 
 }
-
