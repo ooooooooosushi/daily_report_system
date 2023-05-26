@@ -14,13 +14,15 @@ import constants.JpaConst;
 import constants.MessageConst;
 import services.ReportService;
 
+
+
 /**
  * 日報に関する処理を行うActionクラス
  *
  */
 public class ReportAction extends ActionBase {
 
-    private ReportService service;
+	private ReportService service;
 
     /**
      * メソッドを実行する
@@ -28,11 +30,10 @@ public class ReportAction extends ActionBase {
     @Override
     public void process() throws ServletException, IOException {
 
-        service = new ReportService();
+    	service = new ReportService();
 
         //メソッドを実行
         invoke();
-        service.close();
     }
 
     /**
