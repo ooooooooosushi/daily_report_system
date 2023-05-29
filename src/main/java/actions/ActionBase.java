@@ -180,7 +180,7 @@ public abstract class ActionBase {
      */
 	protected LocalDate toLocalDate (String strDate) {
 
-		if (strDate == null == strDate.equals("")) {
+		if (strDate == null || strDate.equals("")) {
 			return LocalDate.now();
 		}
 
