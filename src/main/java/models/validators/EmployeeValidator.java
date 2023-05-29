@@ -27,6 +27,12 @@ public class EmployeeValidator {
 			errors.add(codeError);
 		}
 
+		String nameError = validateName(ev.getName());
+		if (!nameError.equals("")) {
+			errors.add(nameError);
+		}
+
+
 		// パスワードのチェック
 		String passError = validatePassword(ev.getPassword(), passwordCheckFlag);
 		if (!passError.equals("")) {
@@ -83,7 +89,7 @@ public class EmployeeValidator {
 	private static String validateName(String name) {
 
 		if (name == null || name.equals("")) {
-			return MessageConst.E_EMP_CODE_EXIST.E_NONAME.getMessage();
+			return MessageConst.E_NONAME.getMessage();
 		}
 
 		return "";
@@ -97,7 +103,7 @@ public class EmployeeValidator {
      */
 	private static String validatePassword(String password, Boolean passwordCheckFlag) {
 
-		if (passwordCheckFlag && (password == null)) {
+		if (passwordCheckFlag && (password == null || password.equals(""))) {
 			return MessageConst.E_NOPASSWORD.getMessage();
 		}
 
